@@ -3,16 +3,14 @@ import { getAuth }        from 'firebase/auth';
 import { getDatabase }    from 'firebase/database';
 import { getStorage }     from 'firebase/storage';
 
-// Replace every value below with your Firebase project config.
-// Console → Project settings → Your apps → SDK setup and configuration
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL:       "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId:             "YOUR_APP_ID",
+  apiKey:            "AIzaSyDVCASR3I4Ta-Aq7W9OsByq4cM6p2wfTpo",
+  authDomain:        "ichrm-backend.firebaseapp.com",
+  databaseURL:       "https://ichrm-backend-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "ichrm-backend",
+  storageBucket:     "ichrm-backend.firebasestorage.app",
+  messagingSenderId: "478624127642",
+  appId:             "1:478624127642:web:572fd649231da404ce1d23",
 };
 
 const app = initializeApp(firebaseConfig);
