@@ -65,7 +65,16 @@ The same diff + batchUpdate pattern runs on delete to clean up all reverse refer
   id, title, date (unix timestamp), location
   papers:   { paperId: true }
   speakers: { authorId: true }
+
+/conference
+  ongoing: boolean
+
+/homepage
+  title, subtitle, description, venue, address, bannerURL
+  dateStart, dateEnd          ← unix timestamps
 ```
+
+`/conference` and `/homepage` are singleton config nodes managed by the Settings section — no UUIDs, no list view.
 
 Empty strings are stored as-is. Fields with no value are omitted from the object using `...(condition && { key: value })` spread syntax — setting a key to `null` in a Firebase `set()` removes it.
 
