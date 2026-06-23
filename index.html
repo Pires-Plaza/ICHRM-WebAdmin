@@ -45,44 +45,15 @@
     </header>
 
     <div class="main-layout">
+      <nav class="sidebar">
+        <button class="nav-item active" data-section="authors">&#128100; Authors</button>
+        <button class="nav-item"        data-section="papers">&#128196; Papers</button>
+        <button class="nav-item"        data-section="sessions">&#128197; Sessions</button>
+      </nav>
+
       <main class="content">
-
-        <!-- Database panel -->
-        <div id="panel-database" class="panel">
-          <div class="panel-toolbar">
-            <nav id="db-breadcrumb" class="breadcrumb" aria-label="Database path"></nav>
-            <div class="toolbar-right">
-              <input type="text" id="db-path-input" class="path-input" placeholder="Go to path…" />
-              <button id="db-go-btn" class="btn-sm">Go</button>
-              <button id="db-add-btn" class="btn-sm btn-primary">+ Node</button>
-              <button id="db-refresh-btn" class="btn-sm" title="Refresh">&#8635;</button>
-            </div>
-          </div>
-          <div id="db-content" class="panel-body"></div>
-        </div>
-
+        <div id="view" class="view"></div>
       </main>
-    </div>
-  </div>
-
-  <!-- ── Add / Edit modal ───────────────────────────────────── -->
-  <div id="modal-backdrop" hidden>
-    <div class="modal" role="dialog" aria-modal="true">
-      <h2 id="modal-title">Add Node</h2>
-      <div id="modal-key-group" class="field">
-        <label for="node-key">Key</label>
-        <input type="text" id="node-key" autocomplete="off" />
-      </div>
-      <div class="field">
-        <label for="node-value">
-          Value <span class="hint">(string, number, true / false, null, or JSON)</span>
-        </label>
-        <textarea id="node-value" rows="4"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button id="modal-cancel" class="btn-sm">Cancel</button>
-        <button id="modal-confirm" class="btn-sm btn-primary">Save</button>
-      </div>
     </div>
   </div>
 

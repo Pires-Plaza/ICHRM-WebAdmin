@@ -1,13 +1,21 @@
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase-config.js';
 import { signIn, signOutUser, friendlyError } from './auth.js';
-import { initRTDB, setupModalListeners, loadPath as dbLoad } from './rtdb.js';
+import { render as renderAuthors }  from './authors.js';
+import { render as renderPapers }   from './papers.js';
+import { render as renderSessions } from './sessions.js';
 
 const $ = id => document.getElementById(id);
 
+const sections = {
+  authors:  renderAuthors,
+  papers:   renderPapers,
+  sessions: renderSessions,
+};
+
 // ── Auth state ────────────────────────────────────────────────
 
-let appReady = false;
+let navReady = false;
 
 onAuthStateChanged(auth, user => {
   if (user) {
@@ -15,13 +23,18 @@ onAuthStateChanged(auth, user => {
     $('app').hidden = false;
     $('user-email').textContent = user.email;
 
-    if (!appReady) {
-      initRTDB();
-      setupModalListeners();
-      appReady = true;
+    if (!navReady) {
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+          item.classList.add('active');
+          sections[item.dataset.section]();
+        });
+      });
+      navReady = true;
     }
 
-    dbLoad([]);
+    renderAuthors();
   } else {
     $('login-screen').hidden = false;
     $('app').hidden = true;
@@ -34,7 +47,7 @@ $('sign-in-btn').addEventListener('click', async () => {
   const email    = $('email').value.trim();
   const password = $('password').value;
   const errEl    = $('auth-error');
-  errEl.textContent = '';
+  errEl.textContent   = '';
   $('sign-in-btn').disabled = true;
 
   try {
@@ -53,4 +66,3 @@ $('password').addEventListener('keydown', e => {
 // ── Sign out ──────────────────────────────────────────────────
 
 $('sign-out-btn').addEventListener('click', () => signOutUser());
-
