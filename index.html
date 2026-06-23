@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICHRM Admin</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "firebase/app":      "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js",
+      "firebase/auth":     "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js",
+      "firebase/database": "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js",
+      "firebase/storage":  "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js"
+    }
+  }
+  </script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Login ─────────────────────────────────────────────── -->
+  <div id="login-screen">
+    <div class="login-card">
+      <h1>ICHRM Admin</h1>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="email" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" />
+      </div>
+      <button id="sign-in-btn" class="btn-primary">Sign In</button>
+      <p id="auth-error" class="error"></p>
+    </div>
+  </div>
+
+  <!-- ── App ───────────────────────────────────────────────── -->
+  <div id="app" hidden>
+    <header class="app-header">
+      <span class="logo">ICHRM Admin</span>
+      <div class="header-right">
+        <span id="user-email" class="user-email"></span>
+        <button id="sign-out-btn" class="btn-sm">Sign Out</button>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <nav class="sidebar">
+        <button class="nav-item active" data-tab="database">
+          &#128451; Database
+        </button>
+        <button class="nav-item" data-tab="storage">
+          &#128193; Storage
+        </button>
+      </nav>
+
+      <main class="content">
+
+        <!-- Database panel -->
+        <div id="panel-database" class="panel">
+          <div class="panel-toolbar">
+            <nav id="db-breadcrumb" class="breadcrumb" aria-label="Database path"></nav>
+            <div class="toolbar-right">
+              <input type="text" id="db-path-input" class="path-input" placeholder="Go to path…" />
+              <button id="db-go-btn" class="btn-sm">Go</button>
+              <button id="db-add-btn" class="btn-sm btn-primary">+ Node</button>
+              <button id="db-refresh-btn" class="btn-sm" title="Refresh">&#8635;</button>
+            </div>
+          </div>
+          <div id="db-content" class="panel-body"></div>
+        </div>
+
+        <!-- Storage panel -->
+        <div id="panel-storage" class="panel" hidden>
+          <div class="panel-toolbar">
+            <nav id="storage-breadcrumb" class="breadcrumb" aria-label="Storage path"></nav>
+            <div class="toolbar-right">
+              <button id="storage-upload-btn" class="btn-sm btn-primary">&#8593; Upload</button>
+              <input type="file" id="storage-file-input" hidden multiple />
+            </div>
+          </div>
+          <div id="storage-content" class="panel-body"></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ── Add / Edit modal ───────────────────────────────────── -->
+  <div id="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2 id="modal-title">Add Node</h2>
+      <div id="modal-key-group" class="field">
+        <label for="node-key">Key</label>
+        <input type="text" id="node-key" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="node-value">
+          Value <span class="hint">(string, number, true / false, null, or JSON)</span>
+        </label>
+        <textarea id="node-value" rows="4"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn-sm">Cancel</button>
+        <button id="modal-confirm" class="btn-sm btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
