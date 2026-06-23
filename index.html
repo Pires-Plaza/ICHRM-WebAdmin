@@ -9,8 +9,7 @@
     "imports": {
       "firebase/app":      "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js",
       "firebase/auth":     "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js",
-      "firebase/database": "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js",
-      "firebase/storage":  "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js"
+      "firebase/database": "https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js"
     }
   }
   </script>
@@ -46,15 +45,6 @@
     </header>
 
     <div class="main-layout">
-      <nav class="sidebar">
-        <button class="nav-item active" data-tab="database">
-          &#128451; Database
-        </button>
-        <button class="nav-item" data-tab="storage">
-          &#128193; Storage
-        </button>
-      </nav>
-
       <main class="content">
 
         <!-- Database panel -->
@@ -69,18 +59,6 @@
             </div>
           </div>
           <div id="db-content" class="panel-body"></div>
-        </div>
-
-        <!-- Storage panel -->
-        <div id="panel-storage" class="panel" hidden>
-          <div class="panel-toolbar">
-            <nav id="storage-breadcrumb" class="breadcrumb" aria-label="Storage path"></nav>
-            <div class="toolbar-right">
-              <button id="storage-upload-btn" class="btn-sm btn-primary">&#8593; Upload</button>
-              <input type="file" id="storage-file-input" hidden multiple />
-            </div>
-          </div>
-          <div id="storage-content" class="panel-body"></div>
         </div>
 
       </main>

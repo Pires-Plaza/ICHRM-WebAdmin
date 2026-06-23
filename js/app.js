@@ -2,7 +2,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase-config.js';
 import { signIn, signOutUser, friendlyError } from './auth.js';
 import { initRTDB, setupModalListeners, loadPath as dbLoad } from './rtdb.js';
-import { initStorage, loadPath as storageLoad } from './storage.js';
 
 const $ = id => document.getElementById(id);
 
@@ -19,7 +18,6 @@ onAuthStateChanged(auth, user => {
     if (!appReady) {
       initRTDB();
       setupModalListeners();
-      initStorage();
       appReady = true;
     }
 
@@ -56,18 +54,3 @@ $('password').addEventListener('keydown', e => {
 
 $('sign-out-btn').addEventListener('click', () => signOutUser());
 
-// ── Tab switching ─────────────────────────────────────────────
-
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const tab = item.dataset.tab;
-
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    item.classList.add('active');
-
-    $('panel-database').hidden = tab !== 'database';
-    $('panel-storage').hidden  = tab !== 'storage';
-
-    if (tab === 'storage') storageLoad('');
-  });
-});
