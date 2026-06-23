@@ -1,4 +1,5 @@
 import { loadAll, batchUpdate } from './db.js';
+import { showDetail } from './detail.js';
 
 const view = () => document.getElementById('view');
 
@@ -7,8 +8,8 @@ const view = () => document.getElementById('view');
 export async function render() {
   view().innerHTML = '<p class="view-loading">Loading…</p>';
 
-  const data = await loadAll('authors');
-  const authors = Object.values(data).sort((a, b) => a.name.localeCompare(b.name));
+  const [authorsData, papersData] = await Promise.all([loadAll('authors'), loadAll('papers')]);
+  const authors = Object.values(authorsData).sort((a, b) => a.name.localeCompare(b.name));
 
   const v = view();
   v.innerHTML = '';
@@ -47,8 +48,9 @@ export async function render() {
         <button class="btn-sm btn-danger do-del">Delete</button>
       </div></td>
     `;
-    tr.querySelector('.do-edit').addEventListener('click', () => renderForm(author.id));
-    tr.querySelector('.do-del').addEventListener('click',  () => doDelete(author));
+    tr.querySelector('.do-edit').addEventListener('click', (e) => { e.stopPropagation(); renderForm(author.id); });
+    tr.querySelector('.do-del').addEventListener('click',  (e) => { e.stopPropagation(); doDelete(author); });
+    tr.addEventListener('click', () => showDetail(author.name, buildDetail(author, papersData)));
     tbody.appendChild(tr);
   });
 
@@ -132,6 +134,38 @@ async function renderForm(id = null) {
       saveBtn.textContent = 'Save Author';
     }
   }
+}
+
+// ── Detail ────────────────────────────────────────────────────
+
+function buildDetail(author, papersData) {
+  const papers = Object.keys(author.papers || {})
+    .map(pid => papersData[pid]?.title).filter(Boolean).sort();
+
+  return `
+    ${author.photoURL ? `<div class="detail-row">
+      <span class="detail-label">Photo</span>
+      <img class="detail-photo" src="${esc(author.photoURL)}" alt="" />
+    </div>` : ''}
+    <div class="detail-row">
+      <span class="detail-label">Email</span>
+      <span class="detail-value">${esc(author.email || '—')}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Affiliation</span>
+      <span class="detail-value">${esc(author.affiliation || '—')}</span>
+    </div>
+    ${author.bio ? `<div class="detail-row">
+      <span class="detail-label">Bio</span>
+      <span class="detail-value">${esc(author.bio)}</span>
+    </div>` : ''}
+    <div class="detail-row">
+      <span class="detail-label">Papers</span>
+      ${papers.length
+        ? `<div class="detail-tags">${papers.map(t => `<span class="detail-tag">${esc(t)}</span>`).join('')}</div>`
+        : '<span class="detail-value none">None assigned</span>'}
+    </div>
+  `;
 }
 
 // ── Delete ────────────────────────────────────────────────────

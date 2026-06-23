@@ -1,4 +1,5 @@
 import { loadAll, batchUpdate } from './db.js';
+import { showDetail } from './detail.js';
 
 const view = () => document.getElementById('view');
 
@@ -7,7 +8,9 @@ const view = () => document.getElementById('view');
 export async function render() {
   view().innerHTML = '<p class="view-loading">Loading…</p>';
 
-  const [papersData, sessionsData] = await Promise.all([loadAll('papers'), loadAll('sessions')]);
+  const [papersData, sessionsData, authorsData] = await Promise.all([
+    loadAll('papers'), loadAll('sessions'), loadAll('authors'),
+  ]);
   const papers = Object.values(papersData).sort((a, b) => a.title.localeCompare(b.title));
 
   const v = view();
@@ -48,8 +51,9 @@ export async function render() {
         <button class="btn-sm btn-danger do-del">Delete</button>
       </div></td>
     `;
-    tr.querySelector('.do-edit').addEventListener('click', () => renderForm(paper.id));
-    tr.querySelector('.do-del').addEventListener('click',  () => doDelete(paper));
+    tr.querySelector('.do-edit').addEventListener('click', (e) => { e.stopPropagation(); renderForm(paper.id); });
+    tr.querySelector('.do-del').addEventListener('click',  (e) => { e.stopPropagation(); doDelete(paper); });
+    tr.addEventListener('click', () => showDetail(paper.title, buildDetail(paper, sessionsData, authorsData)));
     tbody.appendChild(tr);
   });
 
@@ -153,6 +157,32 @@ async function renderForm(id = null) {
       saveBtn.textContent = 'Save Paper';
     }
   }
+}
+
+// ── Detail ────────────────────────────────────────────────────
+
+function buildDetail(paper, sessionsData, authorsData) {
+  const sessionTitle = paper.session && sessionsData[paper.session]
+    ? sessionsData[paper.session].title : null;
+  const authorNames = Object.keys(paper.authors || {})
+    .map(aid => authorsData[aid]?.name).filter(Boolean).sort();
+
+  return `
+    ${paper.abstract ? `<div class="detail-row">
+      <span class="detail-label">Abstract</span>
+      <span class="detail-value">${esc(paper.abstract)}</span>
+    </div>` : ''}
+    <div class="detail-row">
+      <span class="detail-label">Session</span>
+      <span class="detail-value ${sessionTitle ? '' : 'none'}">${esc(sessionTitle || 'Not assigned')}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Authors</span>
+      ${authorNames.length
+        ? `<div class="detail-tags">${authorNames.map(n => `<span class="detail-tag">${esc(n)}</span>`).join('')}</div>`
+        : '<span class="detail-value none">None assigned</span>'}
+    </div>
+  `;
 }
 
 // ── Delete ────────────────────────────────────────────────────

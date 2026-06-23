@@ -1,4 +1,5 @@
 import { loadAll, batchUpdate } from './db.js';
+import { showDetail } from './detail.js';
 
 const view = () => document.getElementById('view');
 
@@ -7,8 +8,10 @@ const view = () => document.getElementById('view');
 export async function render() {
   view().innerHTML = '<p class="view-loading">Loading…</p>';
 
-  const data     = await loadAll('sessions');
-  const sessions = Object.values(data).sort((a, b) => a.title.localeCompare(b.title));
+  const [sessionsData, authorsData, papersData] = await Promise.all([
+    loadAll('sessions'), loadAll('authors'), loadAll('papers'),
+  ]);
+  const sessions = Object.values(sessionsData).sort((a, b) => a.title.localeCompare(b.title));
 
   const v = view();
   v.innerHTML = '';
@@ -51,8 +54,9 @@ export async function render() {
         <button class="btn-sm btn-danger do-del">Delete</button>
       </div></td>
     `;
-    tr.querySelector('.do-edit').addEventListener('click', () => renderForm(session.id));
-    tr.querySelector('.do-del').addEventListener('click',  () => doDelete(session));
+    tr.querySelector('.do-edit').addEventListener('click', (e) => { e.stopPropagation(); renderForm(session.id); });
+    tr.querySelector('.do-del').addEventListener('click',  (e) => { e.stopPropagation(); doDelete(session); });
+    tr.addEventListener('click', () => showDetail(session.title, buildDetail(session, authorsData, papersData)));
     tbody.appendChild(tr);
   });
 
@@ -145,6 +149,41 @@ async function renderForm(id = null) {
       saveBtn.textContent = 'Save Session';
     }
   }
+}
+
+// ── Detail ────────────────────────────────────────────────────
+
+function buildDetail(session, authorsData, papersData) {
+  const dateStr = session.date
+    ? new Date(session.date * 1000).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })
+    : null;
+  const speakers = Object.keys(session.speakers || {})
+    .map(aid => authorsData[aid]?.name).filter(Boolean).sort();
+  const papers = Object.keys(session.papers || {})
+    .map(pid => papersData[pid]?.title).filter(Boolean).sort();
+
+  return `
+    <div class="detail-row">
+      <span class="detail-label">Date &amp; Time</span>
+      <span class="detail-value ${dateStr ? '' : 'none'}">${dateStr ?? 'Not set'}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Location</span>
+      <span class="detail-value ${session.location ? '' : 'none'}">${esc(session.location || 'Not set')}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Speakers</span>
+      ${speakers.length
+        ? `<div class="detail-tags">${speakers.map(n => `<span class="detail-tag">${esc(n)}</span>`).join('')}</div>`
+        : '<span class="detail-value none">None assigned</span>'}
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Papers</span>
+      ${papers.length
+        ? `<div class="detail-tags">${papers.map(t => `<span class="detail-tag">${esc(t)}</span>`).join('')}</div>`
+        : '<span class="detail-value none">None assigned</span>'}
+    </div>
+  `;
 }
 
 // ── Delete ────────────────────────────────────────────────────
