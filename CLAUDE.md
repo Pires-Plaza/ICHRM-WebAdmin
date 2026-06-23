@@ -72,9 +72,17 @@ The same diff + batchUpdate pattern runs on delete to clean up all reverse refer
 /homepage
   title, subtitle, description, venue, address, bannerURL
   dateStart, dateEnd          ← unix timestamps
+
+/info/committee/{uuid}
+  id, name, affiliation, email
+
+/info/registration            ← plain markdown string
+/info/callForPapers           ← plain markdown string
+/info/submissions             ← plain markdown string
 ```
 
-`/conference` and `/homepage` are singleton config nodes managed by the Settings section — no UUIDs, no list view.
+`/conference` and `/homepage` are singleton config nodes managed by the Settings section.
+`/info` is managed by the Info section, which uses horizontal tabs (Committee / Registration / Call for Papers / Submissions). The three text sub-nodes are stored as plain strings; clients handle markdown rendering.
 
 Empty strings are stored as-is. Fields with no value are omitted from the object using `...(condition && { key: value })` spread syntax — setting a key to `null` in a Firebase `set()` removes it.
 

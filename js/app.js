@@ -5,6 +5,7 @@ import { render as renderAuthors }  from './authors.js';
 import { render as renderPapers }   from './papers.js';
 import { render as renderSessions } from './sessions.js';
 import { render as renderSettings } from './settings.js';
+import { render as renderInfo }     from './info.js';
 import { initDetail } from './detail.js';
 
 initDetail();
@@ -15,6 +16,7 @@ const sections = {
   authors:  renderAuthors,
   papers:   renderPapers,
   sessions: renderSessions,
+  info:     renderInfo,
   settings: renderSettings,
 };
 
