@@ -27,14 +27,15 @@ export async function render() {
   table.className = 'entity-table';
   table.innerHTML = `
     <thead><tr>
-      <th>Title</th><th>Date</th><th>Location</th><th>Papers</th><th></th>
+      <th>Title</th><th>Date</th><th>Location</th><th>Speakers</th><th>Papers</th><th></th>
     </tr></thead>
   `;
 
   const tbody = document.createElement('tbody');
   sessions.forEach(session => {
-    const paperCount = Object.keys(session.papers || {}).length;
-    const dateStr    = session.date
+    const speakerCount = Object.keys(session.speakers || {}).length;
+    const paperCount   = Object.keys(session.papers   || {}).length;
+    const dateStr      = session.date
       ? new Date(session.date * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
       : '—';
 
@@ -43,6 +44,7 @@ export async function render() {
       <td><strong>${esc(session.title)}</strong></td>
       <td>${dateStr}</td>
       <td>${esc(session.location || '—')}</td>
+      <td>${speakerCount}</td>
       <td>${paperCount}</td>
       <td><div class="row-actions">
         <button class="btn-sm do-edit">Edit</button>
@@ -63,12 +65,16 @@ export async function render() {
 async function renderForm(id = null) {
   view().innerHTML = '<p class="view-loading">Loading…</p>';
 
-  const [allSessions, allPapers] = await Promise.all([loadAll('sessions'), loadAll('papers')]);
+  const [allSessions, allPapers, allAuthors] = await Promise.all([
+    loadAll('sessions'), loadAll('papers'), loadAll('authors'),
+  ]);
 
-  const session       = id ? (allSessions[id] ?? null) : null;
-  const papers        = Object.values(allPapers).sort((a, b) => a.title.localeCompare(b.title));
-  const checkedPapers = new Set(Object.keys(session?.papers || {}));
-  const dateValue     = session?.date
+  const session         = id ? (allSessions[id] ?? null) : null;
+  const papers          = Object.values(allPapers).sort((a, b) => a.title.localeCompare(b.title));
+  const authors         = Object.values(allAuthors).sort((a, b) => a.name.localeCompare(b.name));
+  const checkedPapers   = new Set(Object.keys(session?.papers   || {}));
+  const checkedSpeakers = new Set(Object.keys(session?.speakers || {}));
+  const dateValue       = session?.date
     ? new Date(session.date * 1000).toISOString().slice(0, 16)
     : '';
 
@@ -89,6 +95,8 @@ async function renderForm(id = null) {
       <input type="text" id="f-location" value="${esc(session?.location || '')}" /></div>
   `;
 
+  form.appendChild(multiSelect('Speakers', authors, 'speakers', a => a.id, a => a.name, checkedSpeakers,
+    a => a.affiliation || null));
   form.appendChild(multiSelect('Papers', papers, 'papers', p => p.id, p => p.title, checkedPapers));
 
   const actions = el('div', 'form-actions');
@@ -102,17 +110,20 @@ async function renderForm(id = null) {
     const title = document.getElementById('f-title').value.trim();
     if (!title) { document.getElementById('f-title').focus(); return; }
 
-    const newPaperIds  = checkedIds(form, 'papers');
-    const dateInput    = document.getElementById('f-date').value;
-    const entityId     = id ?? crypto.randomUUID();
-    const newPapersObj = idsToObj(newPaperIds);
+    const newPaperIds    = checkedIds(form, 'papers');
+    const newSpeakerIds  = checkedIds(form, 'speakers');
+    const dateInput      = document.getElementById('f-date').value;
+    const entityId       = id ?? crypto.randomUUID();
+    const newPapersObj   = idsToObj(newPaperIds);
+    const newSpeakersObj = idsToObj(newSpeakerIds);
 
     const sessionData = {
       id:       entityId,
       title,
       location: document.getElementById('f-location').value.trim(),
-      ...(dateInput                          && { date: Math.floor(new Date(dateInput).getTime() / 1000) }),
-      ...(Object.keys(newPapersObj).length   && { papers: newPapersObj }),
+      ...(dateInput                            && { date: Math.floor(new Date(dateInput).getTime() / 1000) }),
+      ...(Object.keys(newPapersObj).length     && { papers:   newPapersObj }),
+      ...(Object.keys(newSpeakersObj).length   && { speakers: newSpeakersObj }),
     };
 
     const oldPapers = new Set(Object.keys(session?.papers || {}));
@@ -152,7 +163,7 @@ async function doDelete(session) {
 
 // ── Helpers ───────────────────────────────────────────────────
 
-function multiSelect(labelText, items, name, getId, getLabel, checked) {
+function multiSelect(labelText, items, name, getId, getLabel, checked, getSub) {
   const wrap = document.createElement('div');
   wrap.appendChild(el('p', 'ms-label', labelText));
 
@@ -170,6 +181,10 @@ function multiSelect(labelText, items, name, getId, getLabel, checked) {
 
       const lbl = document.createElement('label');
       lbl.textContent = getLabel(item);
+      if (getSub) {
+        const sub = getSub(item);
+        if (sub) lbl.appendChild(el('span', 'cb-sub', sub));
+      }
 
       row.appendChild(cb);
       row.appendChild(lbl);
