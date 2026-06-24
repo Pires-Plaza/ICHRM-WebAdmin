@@ -102,9 +102,9 @@ function buildHomepageCard(home) {
     <div class="field"><label>Banner / Logo URL</label>
       <input type="url" id="f-hp-bannerURL" value="${esc(home.bannerURL || '')}" /></div>
     <div class="field"><label>Topics</label>
-      <input type="text" id="f-hp-topics" value="${esc(home.topics || '')}" /></div>
+      <textarea id="f-hp-topics">${esc(home.topics || '')}</textarea></div>
     <div class="field"><label>Format</label>
-      <input type="text" id="f-hp-format" value="${esc(home.format || '')}" /></div>
+      <textarea id="f-hp-format">${esc(home.format || '')}</textarea></div>
   `;
 
   const actions = el('div', 'form-actions');
