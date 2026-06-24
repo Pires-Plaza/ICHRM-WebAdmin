@@ -220,6 +220,11 @@ button {
 
 .row-actions { display: flex; gap: 6px; }
 
+.drag-handle { cursor: grab; color: var(--muted); font-size: 18px; user-select: none; text-align: center; padding: 12px 8px; }
+.drag-handle:active { cursor: grabbing; }
+.entity-table tbody tr.dragging { opacity: 0.4; }
+.entity-table tbody tr.drag-over td { border-top: 2px solid var(--accent); }
+
 .view-empty {
   text-align: center;
   color: var(--muted);
