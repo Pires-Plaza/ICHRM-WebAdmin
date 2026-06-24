@@ -11,7 +11,7 @@ export async function render() {
   const [sessionsData, authorsData, papersData] = await Promise.all([
     loadAll('sessions'), loadAll('authors'), loadAll('papers'),
   ]);
-  const sessions = Object.values(sessionsData).sort((a, b) => a.title.localeCompare(b.title));
+  const sessions = Object.values(sessionsData).sort((a, b) => (a.date ?? Infinity) - (b.date ?? Infinity));
 
   const v = view();
   v.innerHTML = '';
