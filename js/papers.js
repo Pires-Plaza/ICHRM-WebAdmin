@@ -99,11 +99,8 @@ async function renderForm(id = null) {
       </select></div>
   `;
 
-  form.appendChild(multiSelect(
-    'Authors', authors, 'authors',
-    a => a.id, a => a.name, checkedAuthors,
-    a => a.affiliation || null,
-  ));
+  const authorWidget = authorSelect(allAuthors, authors, checkedAuthors, paper);
+  form.appendChild(authorWidget);
 
   const actions = el('div', 'form-actions');
   const saveBtn = btn('Save Paper', 'btn-primary', () => save());
@@ -116,10 +113,10 @@ async function renderForm(id = null) {
     const title = document.getElementById('f-title').value.trim();
     if (!title) { document.getElementById('f-title').focus(); return; }
 
-    const newAuthorIds = checkedIds(form, 'authors');
-    const newSessionId = document.getElementById('f-session').value;
-    const entityId     = id ?? crypto.randomUUID();
-    const newAuthorsObj = idsToObj(newAuthorIds);
+    const newAuthorIds  = authorWidget.getOrderedIds();
+    const newSessionId  = document.getElementById('f-session').value;
+    const entityId      = id ?? crypto.randomUUID();
+    const newAuthorsObj = Object.fromEntries(newAuthorIds.map((aid, i) => [aid, i]));
 
     const paperData = {
       id:       entityId,
@@ -164,8 +161,11 @@ async function renderForm(id = null) {
 function buildDetail(paper, sessionsData, authorsData) {
   const sessionTitle = paper.session && sessionsData[paper.session]
     ? sessionsData[paper.session].title : null;
-  const authorNames = Object.keys(paper.authors || {})
-    .map(aid => authorsData[aid]?.name).filter(Boolean).sort();
+  const authorNames = Object.entries(paper.authors || {})
+    .sort(([aId, aVal], [bId, bVal]) =>
+      (typeof aVal === 'number' ? aVal : Infinity) - (typeof bVal === 'number' ? bVal : Infinity)
+      || (authorsData[aId]?.name || '').localeCompare(authorsData[bId]?.name || ''))
+    .map(([aid]) => authorsData[aid]?.name).filter(Boolean);
 
   return `
     ${paper.abstract ? `<div class="detail-row">
@@ -201,6 +201,100 @@ async function doDelete(paper) {
 
   await batchUpdate(updates);
   render();
+}
+
+// ── Author order + select widget ──────────────────────────────
+
+function authorSelect(authorsMap, sortedAuthors, checkedAuthors, paper) {
+  const initialOrdered = Object.entries(paper?.authors || {})
+    .sort(([aId, aVal], [bId, bVal]) =>
+      (typeof aVal === 'number' ? aVal : Infinity) - (typeof bVal === 'number' ? bVal : Infinity)
+      || (authorsMap[aId]?.name || '').localeCompare(authorsMap[bId]?.name || ''))
+    .map(([id]) => id)
+    .filter(id => authorsMap[id]);
+
+  const wrap = document.createElement('div');
+
+  wrap.appendChild(el('p', 'ms-label', 'Author Order'));
+  const orderList = document.createElement('div');
+  orderList.className = 'author-order-list';
+  const emptyMsg = el('p', 'author-order-empty', 'No authors selected yet.');
+  orderList.appendChild(emptyMsg);
+  wrap.appendChild(orderList);
+
+  let dragSrc = null;
+
+  function syncEmpty() {
+    emptyMsg.style.display = orderList.querySelectorAll('.author-order-item').length ? 'none' : '';
+  }
+
+  function makeItem(authorId) {
+    const author = authorsMap[authorId];
+    const item   = document.createElement('div');
+    item.className  = 'author-order-item';
+    item.draggable  = true;
+    item.dataset.id = authorId;
+    item.innerHTML  = `<span class="drag-handle" title="Drag to reorder">⠿</span><span>${esc(author.name)}</span>`;
+
+    item.addEventListener('dragstart', e => {
+      dragSrc = item; item.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      orderList.querySelectorAll('.author-order-item').forEach(r => r.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      orderList.querySelectorAll('.author-order-item').forEach(r => r.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault(); item.classList.remove('drag-over');
+      if (!dragSrc || dragSrc === item) return;
+      const all = [...orderList.querySelectorAll('.author-order-item')];
+      all.indexOf(dragSrc) < all.indexOf(item) ? item.after(dragSrc) : item.before(dragSrc);
+      dragSrc = null;
+    });
+
+    return item;
+  }
+
+  initialOrdered.forEach(id => orderList.appendChild(makeItem(id)));
+  syncEmpty();
+
+  wrap.appendChild(el('p', 'ms-label', 'Authors'));
+  const list = el('div', 'ms-list');
+  if (!sortedAuthors.length) {
+    list.appendChild(el('p', 'ms-empty', 'No authors available yet.'));
+  } else {
+    sortedAuthors.forEach(author => {
+      const row = el('div', 'cb-item');
+      const cb  = document.createElement('input');
+      cb.type    = 'checkbox';
+      cb.name    = 'authors';
+      cb.value   = author.id;
+      cb.checked = checkedAuthors.has(author.id);
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          orderList.appendChild(makeItem(author.id));
+        } else {
+          orderList.querySelector(`.author-order-item[data-id="${author.id}"]`)?.remove();
+        }
+        syncEmpty();
+      });
+      const lbl = document.createElement('label');
+      lbl.textContent = author.name;
+      if (author.affiliation) lbl.appendChild(el('span', 'cb-sub', author.affiliation));
+      row.appendChild(cb); row.appendChild(lbl); list.appendChild(row);
+    });
+  }
+  wrap.appendChild(list);
+
+  wrap.getOrderedIds = () =>
+    [...orderList.querySelectorAll('.author-order-item')].map(i => i.dataset.id);
+
+  return wrap;
 }
 
 // ── Helpers ───────────────────────────────────────────────────

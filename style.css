@@ -322,6 +322,34 @@ button {
   color: var(--muted);
 }
 
+/* ── Author order list ────────────────────────────────────── */
+.author-order-list {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  min-height: 44px;
+  margin-bottom: 16px;
+}
+
+.author-order-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.author-order-item:last-child { border-bottom: none; }
+.author-order-item .drag-handle { padding: 0; font-size: 16px; }
+.author-order-item.dragging { opacity: 0.4; }
+.author-order-item.drag-over { border-top: 2px solid var(--accent); }
+
+.author-order-empty {
+  padding: 12px 16px;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
 /* ── Info tabs ─────────────────────────────────────────────── */
 .info-tabs {
   display: flex;
