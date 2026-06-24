@@ -82,6 +82,14 @@ async function renderForm(id = null) {
     ? new Date(session.date * 1000).toISOString().slice(0, 16)
     : '';
 
+  // paper → Set<authorId>, used to drive the dynamic speakers list
+  const paperAuthorMap = {};
+  Object.values(allPapers).forEach(p => {
+    paperAuthorMap[p.id] = new Set(Object.keys(p.authors || {}));
+  });
+  const currentPapers   = new Set(checkedPapers);
+  const currentSpeakers = new Set(checkedSpeakers);
+
   const v = view();
   v.innerHTML = '';
 
@@ -103,9 +111,61 @@ async function renderForm(id = null) {
 
   form.appendChild(multiSelect('Chairs', authors, 'chairs', a => a.id, a => a.name,
     new Set(Object.keys(session?.chairs || {})), a => a.affiliation || null));
-  form.appendChild(multiSelect('Speakers', authors, 'speakers', a => a.id, a => a.name, checkedSpeakers,
-    a => a.affiliation || null));
-  form.appendChild(multiSelect('Papers', papers, 'papers', p => p.id, p => p.title, checkedPapers));
+
+  // Papers widget — changes drive the speakers list
+  const papersWidget = multiSelect('Papers', papers, 'papers', p => p.id, p => p.title, checkedPapers);
+  form.appendChild(papersWidget);
+
+  // Dynamic speakers list — only authors of currently selected papers
+  const speakersWrap = document.createElement('div');
+  form.appendChild(speakersWrap);
+
+  function rebuildSpeakers() {
+    const availableIds = new Set();
+    currentPapers.forEach(pid => {
+      (paperAuthorMap[pid] || new Set()).forEach(aid => availableIds.add(aid));
+    });
+
+    // auto-deselect speakers no longer in any selected paper
+    currentSpeakers.forEach(aid => { if (!availableIds.has(aid)) currentSpeakers.delete(aid); });
+
+    speakersWrap.innerHTML = '';
+    speakersWrap.appendChild(el('p', 'ms-label', 'Speakers'));
+    const list = el('div', 'ms-list');
+    const available = authors.filter(a => availableIds.has(a.id));
+
+    if (!available.length) {
+      list.appendChild(el('p', 'ms-empty', 'No authors available — assign papers first.'));
+    } else {
+      available.forEach(author => {
+        const row = el('div', 'cb-item');
+        const cb  = document.createElement('input');
+        cb.type    = 'checkbox';
+        cb.name    = 'speakers';
+        cb.value   = author.id;
+        cb.checked = currentSpeakers.has(author.id);
+        cb.addEventListener('change', () => {
+          if (cb.checked) currentSpeakers.add(author.id);
+          else currentSpeakers.delete(author.id);
+        });
+        const lbl = document.createElement('label');
+        lbl.textContent = author.name;
+        if (author.affiliation) lbl.appendChild(el('span', 'cb-sub', author.affiliation));
+        row.appendChild(cb); row.appendChild(lbl); list.appendChild(row);
+      });
+    }
+    speakersWrap.appendChild(list);
+  }
+
+  papersWidget.querySelectorAll('input[name="papers"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) currentPapers.add(cb.value);
+      else currentPapers.delete(cb.value);
+      rebuildSpeakers();
+    });
+  });
+
+  rebuildSpeakers();
 
   const actions = el('div', 'form-actions');
   const saveBtn = btn('Save Session', 'btn-primary', () => save());
