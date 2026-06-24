@@ -97,8 +97,12 @@ async function renderForm(id = null) {
       <input type="datetime-local" id="f-date" value="${dateValue}" /></div>
     <div class="field"><label>Location</label>
       <input type="text" id="f-location" value="${esc(session?.location || '')}" /></div>
+    <div class="field"><label>Description <span class="hint">(Markdown — clients handle rendering)</span></label>
+      <textarea id="f-description">${esc(session?.description || '')}</textarea></div>
   `;
 
+  form.appendChild(multiSelect('Chairs', authors, 'chairs', a => a.id, a => a.name,
+    new Set(Object.keys(session?.chairs || {})), a => a.affiliation || null));
   form.appendChild(multiSelect('Speakers', authors, 'speakers', a => a.id, a => a.name, checkedSpeakers,
     a => a.affiliation || null));
   form.appendChild(multiSelect('Papers', papers, 'papers', p => p.id, p => p.title, checkedPapers));
@@ -116,18 +120,22 @@ async function renderForm(id = null) {
 
     const newPaperIds    = checkedIds(form, 'papers');
     const newSpeakerIds  = checkedIds(form, 'speakers');
+    const newChairIds    = checkedIds(form, 'chairs');
     const dateInput      = document.getElementById('f-date').value;
     const entityId       = id ?? crypto.randomUUID();
     const newPapersObj   = idsToObj(newPaperIds);
     const newSpeakersObj = idsToObj(newSpeakerIds);
+    const newChairsObj   = idsToObj(newChairIds);
 
     const sessionData = {
       id:       entityId,
       title,
-      location: document.getElementById('f-location').value.trim(),
+      location:    document.getElementById('f-location').value.trim(),
+      description: document.getElementById('f-description').value.trim(),
       ...(dateInput                            && { date: Math.floor(new Date(dateInput).getTime() / 1000) }),
-      ...(Object.keys(newPapersObj).length     && { papers:   newPapersObj }),
-      ...(Object.keys(newSpeakersObj).length   && { speakers: newSpeakersObj }),
+      ...(Object.keys(newPapersObj).length     && { papers:    newPapersObj }),
+      ...(Object.keys(newSpeakersObj).length   && { speakers:  newSpeakersObj }),
+      ...(Object.keys(newChairsObj).length     && { chairs:    newChairsObj }),
     };
 
     const oldPapers = new Set(Object.keys(session?.papers || {}));
@@ -157,10 +165,9 @@ function buildDetail(session, authorsData, papersData) {
   const dateStr = session.date
     ? new Date(session.date * 1000).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })
     : null;
-  const speakers = Object.keys(session.speakers || {})
-    .map(aid => authorsData[aid]?.name).filter(Boolean).sort();
-  const papers = Object.keys(session.papers || {})
-    .map(pid => papersData[pid]?.title).filter(Boolean).sort();
+  const chairs   = Object.keys(session.chairs   || {}).map(aid => authorsData[aid]?.name).filter(Boolean).sort();
+  const speakers = Object.keys(session.speakers || {}).map(aid => authorsData[aid]?.name).filter(Boolean).sort();
+  const papers   = Object.keys(session.papers   || {}).map(pid => papersData[pid]?.title).filter(Boolean).sort();
 
   return `
     <div class="detail-row">
@@ -170,6 +177,16 @@ function buildDetail(session, authorsData, papersData) {
     <div class="detail-row">
       <span class="detail-label">Location</span>
       <span class="detail-value ${session.location ? '' : 'none'}">${esc(session.location || 'Not set')}</span>
+    </div>
+    ${session.description ? `<div class="detail-row">
+      <span class="detail-label">Description</span>
+      <span class="detail-value">${esc(session.description)}</span>
+    </div>` : ''}
+    <div class="detail-row">
+      <span class="detail-label">Chairs</span>
+      ${chairs.length
+        ? `<div class="detail-tags">${chairs.map(n => `<span class="detail-tag">${esc(n)}</span>`).join('')}</div>`
+        : '<span class="detail-value none">None assigned</span>'}
     </div>
     <div class="detail-row">
       <span class="detail-label">Speakers</span>
