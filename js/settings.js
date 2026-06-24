@@ -101,6 +101,10 @@ function buildHomepageCard(home) {
       <input type="text" id="f-hp-address" value="${esc(home.address || '')}" /></div>
     <div class="field"><label>Banner / Logo URL</label>
       <input type="url" id="f-hp-bannerURL" value="${esc(home.bannerURL || '')}" /></div>
+    <div class="field"><label>Topics</label>
+      <input type="text" id="f-hp-topics" value="${esc(home.topics || '')}" /></div>
+    <div class="field"><label>Format</label>
+      <input type="text" id="f-hp-format" value="${esc(home.format || '')}" /></div>
   `;
 
   const actions = el('div', 'form-actions');
@@ -116,6 +120,8 @@ function buildHomepageCard(home) {
       venue:       g('f-hp-venue'),
       address:     g('f-hp-address'),
       bannerURL:   g('f-hp-bannerURL'),
+      topics:      g('f-hp-topics'),
+      format:      g('f-hp-format'),
       dateStart:   dateStartRaw ? Math.floor(new Date(dateStartRaw).getTime() / 1000) : null,
       dateEnd:     dateEndRaw   ? Math.floor(new Date(dateEndRaw).getTime()   / 1000) : null,
     };
