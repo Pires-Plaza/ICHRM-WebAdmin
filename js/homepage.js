@@ -2,6 +2,8 @@ import { loadAll, saveDoc } from './db.js';
 
 const view = () => document.getElementById('view');
 
+// ── Read view ─────────────────────────────────────────────────
+
 export async function render() {
   view().innerHTML = '<p class="view-loading">Loading…</p>';
 
@@ -12,12 +14,45 @@ export async function render() {
 
   const header = el('div', 'view-header');
   header.appendChild(el('h1', 'view-title', 'Home Page'));
+  header.appendChild(btn('Edit', 'btn-primary', () => renderForm(home)));
   v.appendChild(header);
 
-  v.appendChild(buildCard(home));
+  v.appendChild(buildReadCard(home));
 }
 
-function buildCard(home) {
+function buildReadCard(home) {
+  const fmt = ts => ts
+    ? new Date(ts * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    : null;
+
+  const rows = [
+    { label: 'Title',       value: home.title },
+    { label: 'Subtitle',    value: home.subtitle },
+    { label: 'Description', value: home.description },
+    { label: 'Start Date',  value: fmt(home.dateStart) },
+    { label: 'End Date',    value: fmt(home.dateEnd) },
+    { label: 'Venue',       value: home.venue },
+    { label: 'Address',     value: home.address },
+    { label: 'Banner URL',  value: home.bannerURL },
+    { label: 'Topics',      value: home.topics },
+    { label: 'Format',      value: home.format },
+  ];
+
+  const card = el('div', 'settings-card');
+  rows.forEach(({ label, value }) => {
+    const row = el('div', 'detail-row');
+    row.innerHTML = `
+      <span class="detail-label">${label}</span>
+      <span class="detail-value${value ? '' : ' none'}">${esc(value || 'Not set')}</span>
+    `;
+    card.appendChild(row);
+  });
+  return card;
+}
+
+// ── Edit form ─────────────────────────────────────────────────
+
+function renderForm(home) {
   const toDatetimeLocal = ts => ts
     ? new Date(ts * 1000).toISOString().slice(0, 16)
     : '';
@@ -44,8 +79,7 @@ function buildCard(home) {
     saveBtn.textContent = 'Saving…';
     try {
       await saveDoc('homepage', homepageData);
-      saveBtn.textContent = 'Saved!';
-      setTimeout(() => { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }, 2000);
+      render();
     } catch (err) {
       alert(`Save failed: ${err.message}`);
       saveBtn.disabled    = false;
@@ -53,12 +87,16 @@ function buildCard(home) {
     }
   });
 
-  const card = el('div', 'settings-card');
+  const v = view();
+  v.innerHTML = '';
 
-  const cardHeader = el('div', 'settings-card-header');
-  cardHeader.appendChild(el('h2', 'settings-card-title', 'Home Page'));
-  cardHeader.appendChild(saveBtn);
-  card.appendChild(cardHeader);
+  const header = el('div', 'view-header');
+  const left   = el('div', 'form-nav');
+  left.appendChild(backBtn('Home Page', render));
+  left.appendChild(el('h1', 'form-title', 'Edit Home Page'));
+  header.appendChild(left);
+  header.appendChild(saveBtn);
+  v.appendChild(header);
 
   const form = el('div', 'form-body');
   form.innerHTML = `
@@ -83,9 +121,20 @@ function buildCard(home) {
     <div class="field"><label>Format</label>
       <textarea id="f-hp-format">${esc(home.format || '')}</textarea></div>
   `;
-  card.appendChild(form);
 
-  return card;
+  const card = el('div', 'settings-card');
+  card.appendChild(form);
+  v.appendChild(card);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+
+function backBtn(label, onClick) {
+  const b = document.createElement('button');
+  b.className = 'form-back';
+  b.innerHTML = `&#8592; Back to ${label}`;
+  b.addEventListener('click', onClick);
+  return b;
 }
 
 function btn(text, className, onClick) {
