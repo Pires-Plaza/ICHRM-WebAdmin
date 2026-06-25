@@ -3,6 +3,17 @@ import { showDetail } from './detail.js';
 
 const view = () => document.getElementById('view');
 
+const SESSION_TYPES = [
+  { value: 'keynote',      label: 'Keynote' },
+  { value: 'presentation', label: 'Presentation' },
+  { value: 'workshop',     label: 'Workshop' },
+  { value: 'panel',        label: 'Panel' },
+  { value: 'poster',       label: 'Poster' },
+  { value: 'break',        label: 'Break' },
+  { value: 'opening',      label: 'Opening' },
+  { value: 'closing',      label: 'Closing' },
+];
+
 // ── List ──────────────────────────────────────────────────────
 
 export async function render() {
@@ -30,7 +41,7 @@ export async function render() {
   table.className = 'entity-table';
   table.innerHTML = `
     <thead><tr>
-      <th>Title</th><th>Date</th><th>Location</th><th>Speakers</th><th>Papers</th><th></th>
+      <th>Title</th><th>Type</th><th>Date</th><th>Location</th><th>Speakers</th><th>Papers</th><th></th>
     </tr></thead>
   `;
 
@@ -42,9 +53,12 @@ export async function render() {
       ? new Date(session.date * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
       : '—';
 
+    const typeLabel = SESSION_TYPES.find(t => t.value === session.type)?.label ?? '—';
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong>${esc(session.title)}</strong></td>
+      <td>${typeLabel}</td>
       <td>${dateStr}</td>
       <td>${esc(session.location || '—')}</td>
       <td>${speakerCount}</td>
@@ -98,9 +112,18 @@ async function renderForm(id = null) {
 
   const form = el('div', 'form-body');
 
+  const typeOptions = SESSION_TYPES.map(t =>
+    `<option value="${t.value}" ${session?.type === t.value ? 'selected' : ''}>${t.label}</option>`
+  ).join('');
+
   form.innerHTML = `
     <div class="field"><label>Title *</label>
       <input type="text" id="f-title" value="${esc(session?.title || '')}" /></div>
+    <div class="field"><label>Type</label>
+      <select id="f-type">
+        <option value="">— No type —</option>
+        ${typeOptions}
+      </select></div>
     <div class="field"><label>Date &amp; Time</label>
       <input type="datetime-local" id="f-date" value="${dateValue}" /></div>
     <div class="field"><label>Location</label>
@@ -187,11 +210,14 @@ async function renderForm(id = null) {
     const newSpeakersObj = idsToObj(newSpeakerIds);
     const newChairsObj   = idsToObj(newChairIds);
 
+    const typeVal = document.getElementById('f-type').value;
+
     const sessionData = {
       id:       entityId,
       title,
       location:    document.getElementById('f-location').value.trim(),
       description: document.getElementById('f-description').value.trim(),
+      ...(typeVal && { type: typeVal }),
       ...(dateInput                            && { date: Math.floor(new Date(dateInput).getTime() / 1000) }),
       ...(Object.keys(newPapersObj).length     && { papers:    newPapersObj }),
       ...(Object.keys(newSpeakersObj).length   && { speakers:  newSpeakersObj }),
@@ -225,11 +251,16 @@ function buildDetail(session, authorsData, papersData) {
   const dateStr = session.date
     ? new Date(session.date * 1000).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })
     : null;
+  const typeLabel = SESSION_TYPES.find(t => t.value === session.type)?.label ?? null;
   const chairs   = Object.keys(session.chairs   || {}).map(aid => authorsData[aid]?.name).filter(Boolean).sort();
   const speakers = Object.keys(session.speakers || {}).map(aid => authorsData[aid]?.name).filter(Boolean).sort();
   const papers   = Object.keys(session.papers   || {}).map(pid => papersData[pid]?.title).filter(Boolean).sort();
 
   return `
+    ${typeLabel ? `<div class="detail-row">
+      <span class="detail-label">Type</span>
+      <span class="detail-value">${typeLabel}</span>
+    </div>` : ''}
     <div class="detail-row">
       <span class="detail-label">Date &amp; Time</span>
       <span class="detail-value ${dateStr ? '' : 'none'}">${dateStr ?? 'Not set'}</span>
