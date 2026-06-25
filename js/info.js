@@ -163,20 +163,6 @@ async function renderCommitteeForm(id = null) {
   const v = view();
   v.innerHTML = '';
 
-  v.appendChild(backBtn('Info — Committee', () => render('committee')));
-  v.appendChild(el('h1', 'form-title', id ? `Edit: ${member?.name ?? ''}` : 'New Committee Member'));
-
-  const form = el('div', 'form-body');
-  form.innerHTML = `
-    <div class="field"><label>Name *</label>
-      <input type="text" id="f-name" value="${esc(member?.name || '')}" /></div>
-    <div class="field"><label>Affiliation</label>
-      <input type="text" id="f-affiliation" value="${esc(member?.affiliation || '')}" /></div>
-    <div class="field"><label>Email</label>
-      <input type="email" id="f-email" value="${esc(member?.email || '')}" /></div>
-  `;
-
-  const actions = el('div', 'form-actions');
   const saveBtn = btn('Save Member', 'btn-primary', async () => {
     const name = document.getElementById('f-name').value.trim();
     if (!name) { document.getElementById('f-name').focus(); return; }
@@ -202,9 +188,24 @@ async function renderCommitteeForm(id = null) {
     }
   });
 
-  actions.appendChild(saveBtn);
-  actions.appendChild(btn('Cancel', 'btn-sm', () => render('committee')));
-  form.appendChild(actions);
+  const header = el('div', 'view-header');
+  const left   = el('div', 'form-nav');
+  left.appendChild(backBtn('Info — Committee', () => render('committee')));
+  left.appendChild(el('h1', 'form-title', id ? `Edit: ${member?.name ?? ''}` : 'New Committee Member'));
+  header.appendChild(left);
+  header.appendChild(saveBtn);
+  v.appendChild(header);
+
+  const form = el('div', 'form-body');
+  form.innerHTML = `
+    <div class="field"><label>Name *</label>
+      <input type="text" id="f-name" value="${esc(member?.name || '')}" /></div>
+    <div class="field"><label>Affiliation</label>
+      <input type="text" id="f-affiliation" value="${esc(member?.affiliation || '')}" /></div>
+    <div class="field"><label>Email</label>
+      <input type="email" id="f-email" value="${esc(member?.email || '')}" /></div>
+  `;
+
   v.appendChild(form);
 }
 
@@ -219,18 +220,6 @@ async function deleteCommitteeMember(member) {
 // ── Text sections ─────────────────────────────────────────────
 
 function buildTextCard(key, title, content) {
-  const card = el('div', 'settings-card');
-  card.appendChild(el('h2', 'settings-card-title', title));
-
-  const form = el('div', 'form-body');
-  form.innerHTML = `
-    <div class="field">
-      <label>Content <span class="hint">(Markdown — clients handle rendering)</span></label>
-      <textarea id="f-${key}" style="min-height:260px">${esc(content)}</textarea>
-    </div>
-  `;
-
-  const actions = el('div', 'form-actions');
   const saveBtn = btn('Save', 'btn-primary', async () => {
     const text = document.getElementById(`f-${key}`).value;
     saveBtn.disabled    = true;
@@ -246,8 +235,20 @@ function buildTextCard(key, title, content) {
     }
   });
 
-  actions.appendChild(saveBtn);
-  form.appendChild(actions);
+  const card = el('div', 'settings-card');
+
+  const cardHeader = el('div', 'settings-card-header');
+  cardHeader.appendChild(el('h2', 'settings-card-title', title));
+  cardHeader.appendChild(saveBtn);
+  card.appendChild(cardHeader);
+
+  const form = el('div', 'form-body');
+  form.innerHTML = `
+    <div class="field">
+      <label>Content <span class="hint">(Markdown — clients handle rendering)</span></label>
+      <textarea id="f-${key}" style="min-height:260px">${esc(content)}</textarea>
+    </div>
+  `;
   card.appendChild(form);
   return card;
 }

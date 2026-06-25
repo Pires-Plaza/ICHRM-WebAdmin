@@ -208,6 +208,11 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
+.entity-table th.sortable { cursor: pointer; user-select: none; }
+.entity-table th.sortable:hover { color: var(--text); }
+.entity-table th.sort-active { color: var(--accent); }
+.sort-icon { font-size: 10px; margin-left: 3px; }
+
 .entity-table td {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
@@ -254,6 +259,10 @@ button {
 .form-back:hover { text-decoration: underline; }
 
 .form-title { font-size: 22px; font-weight: 700; margin-bottom: 28px; }
+
+.form-nav { display: flex; flex-direction: column; gap: 2px; }
+.form-nav .form-back  { margin-bottom: 0; }
+.form-nav .form-title { margin-bottom: 0; }
 
 .form-body {
   max-width: 580px;
@@ -391,6 +400,20 @@ button {
   padding-bottom: 14px;
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border);
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.settings-card-header .settings-card-title {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
 }
 
 /* Toggle switch */

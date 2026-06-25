@@ -3,6 +3,15 @@ import { showDetail } from './detail.js';
 
 const view = () => document.getElementById('view');
 
+let _papers = [], _sessionsData = {}, _authorsData = {};
+let _sort = { col: 'title', dir: 'asc' };
+
+const COLS = [
+  { key: 'title',   label: 'Title' },
+  { key: 'session', label: 'Session' },
+  { key: 'authors', label: 'Authors' },
+];
+
 // ── List ──────────────────────────────────────────────────────
 
 export async function render() {
@@ -11,7 +20,9 @@ export async function render() {
   const [papersData, sessionsData, authorsData] = await Promise.all([
     loadAll('papers'), loadAll('sessions'), loadAll('authors'),
   ]);
-  const papers = Object.values(papersData).sort((a, b) => a.title.localeCompare(b.title));
+  _papers       = Object.values(papersData);
+  _sessionsData = sessionsData;
+  _authorsData  = authorsData;
 
   const v = view();
   v.innerHTML = '';
@@ -21,24 +32,53 @@ export async function render() {
   header.appendChild(btn('+ New Paper', 'btn-primary', () => renderForm()));
   v.appendChild(header);
 
-  if (!papers.length) {
+  if (!_papers.length) {
     v.appendChild(el('p', 'view-empty', 'No papers yet. Click "+ New Paper" to add one.'));
     return;
   }
 
   const table = document.createElement('table');
   table.className = 'entity-table';
-  table.innerHTML = `
-    <thead><tr>
-      <th>Title</th><th>Session</th><th>Authors</th><th></th>
-    </tr></thead>
-  `;
+  renderList(table);
+  v.appendChild(table);
+}
+
+function renderList(table) {
+  table.innerHTML = '';
+
+  const thead = document.createElement('thead');
+  const htr   = document.createElement('tr');
+  COLS.forEach(col => {
+    const th = document.createElement('th');
+    th.className = 'sortable' + (_sort.col === col.key ? ' sort-active' : '');
+    th.innerHTML = `${col.label} <span class="sort-icon">${_sort.col === col.key ? (_sort.dir === 'asc' ? '▲' : '▼') : '⇅'}</span>`;
+    th.addEventListener('click', () => {
+      _sort = { col: col.key, dir: _sort.col === col.key && _sort.dir === 'asc' ? 'desc' : 'asc' };
+      renderList(table);
+    });
+    htr.appendChild(th);
+  });
+  htr.appendChild(document.createElement('th'));
+  thead.appendChild(htr);
+  table.appendChild(thead);
+
+  const mul = _sort.dir === 'asc' ? 1 : -1;
+  const sorted = [..._papers].sort((a, b) => {
+    if (_sort.col === 'authors') {
+      return mul * (Object.keys(a.authors || {}).length - Object.keys(b.authors || {}).length);
+    }
+    if (_sort.col === 'session') {
+      const at = a.session && _sessionsData[a.session] ? _sessionsData[a.session].title : '';
+      const bt = b.session && _sessionsData[b.session] ? _sessionsData[b.session].title : '';
+      return mul * at.localeCompare(bt);
+    }
+    return mul * (a[_sort.col] || '').localeCompare(b[_sort.col] || '');
+  });
 
   const tbody = document.createElement('tbody');
-  papers.forEach(paper => {
-    const sessionTitle = paper.session && sessionsData[paper.session]
-      ? sessionsData[paper.session].title
-      : '—';
+  sorted.forEach(paper => {
+    const sessionTitle = paper.session && _sessionsData[paper.session]
+      ? _sessionsData[paper.session].title : '—';
     const authorCount = Object.keys(paper.authors || {}).length;
 
     const tr = document.createElement('tr');
@@ -53,12 +93,10 @@ export async function render() {
     `;
     tr.querySelector('.do-edit').addEventListener('click', (e) => { e.stopPropagation(); renderForm(paper.id); });
     tr.querySelector('.do-del').addEventListener('click',  (e) => { e.stopPropagation(); doDelete(paper); });
-    tr.addEventListener('click', () => showDetail(paper.title, buildDetail(paper, sessionsData, authorsData)));
+    tr.addEventListener('click', () => showDetail(paper.title, buildDetail(paper, _sessionsData, _authorsData)));
     tbody.appendChild(tr);
   });
-
   table.appendChild(tbody);
-  v.appendChild(table);
 }
 
 // ── Form ──────────────────────────────────────────────────────
@@ -78,8 +116,15 @@ async function renderForm(id = null) {
   const v = view();
   v.innerHTML = '';
 
-  v.appendChild(backBtn('Papers', render));
-  v.appendChild(el('h1', 'form-title', id ? `Edit: ${paper?.title ?? ''}` : 'New Paper'));
+  const saveBtn = btn('Save Paper', 'btn-primary', () => save());
+
+  const header = el('div', 'view-header');
+  const left   = el('div', 'form-nav');
+  left.appendChild(backBtn('Papers', render));
+  left.appendChild(el('h1', 'form-title', id ? `Edit: ${paper?.title ?? ''}` : 'New Paper'));
+  header.appendChild(left);
+  header.appendChild(saveBtn);
+  v.appendChild(header);
 
   const form = el('div', 'form-body');
 
@@ -101,12 +146,6 @@ async function renderForm(id = null) {
 
   const authorWidget = authorSelect(allAuthors, authors, checkedAuthors, paper);
   form.appendChild(authorWidget);
-
-  const actions = el('div', 'form-actions');
-  const saveBtn = btn('Save Paper', 'btn-primary', () => save());
-  actions.appendChild(saveBtn);
-  actions.appendChild(btn('Cancel', 'btn-sm', render));
-  form.appendChild(actions);
   v.appendChild(form);
 
   async function save() {

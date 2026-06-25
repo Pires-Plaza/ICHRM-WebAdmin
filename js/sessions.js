@@ -25,6 +25,18 @@ const SESSION_TYPES = [
   { value: 'closing',      label: 'Closing' },
 ];
 
+let _sessions = [], _authorsData = {}, _papersData = {};
+let _sort = { col: 'date', dir: 'asc' };
+
+const COLS = [
+  { key: 'title',    label: 'Title' },
+  { key: 'type',     label: 'Type' },
+  { key: 'date',     label: 'Date' },
+  { key: 'location', label: 'Location' },
+  { key: 'speakers', label: 'Speakers' },
+  { key: 'papers',   label: 'Papers' },
+];
+
 // ── List ──────────────────────────────────────────────────────
 
 export async function render() {
@@ -33,7 +45,9 @@ export async function render() {
   const [sessionsData, authorsData, papersData] = await Promise.all([
     loadAll('sessions'), loadAll('authors'), loadAll('papers'),
   ]);
-  const sessions = Object.values(sessionsData).sort((a, b) => (a.date ?? Infinity) - (b.date ?? Infinity));
+  _sessions    = Object.values(sessionsData);
+  _authorsData = authorsData;
+  _papersData  = papersData;
 
   const v = view();
   v.innerHTML = '';
@@ -43,27 +57,56 @@ export async function render() {
   header.appendChild(btn('+ New Session', 'btn-primary', () => renderForm()));
   v.appendChild(header);
 
-  if (!sessions.length) {
+  if (!_sessions.length) {
     v.appendChild(el('p', 'view-empty', 'No sessions yet. Click "+ New Session" to add one.'));
     return;
   }
 
   const table = document.createElement('table');
   table.className = 'entity-table';
-  table.innerHTML = `
-    <thead><tr>
-      <th>Title</th><th>Type</th><th>Date</th><th>Location</th><th>Speakers</th><th>Papers</th><th></th>
-    </tr></thead>
-  `;
+  renderList(table);
+  v.appendChild(table);
+}
+
+function renderList(table) {
+  table.innerHTML = '';
+
+  const thead = document.createElement('thead');
+  const htr   = document.createElement('tr');
+  COLS.forEach(col => {
+    const th = document.createElement('th');
+    th.className = 'sortable' + (_sort.col === col.key ? ' sort-active' : '');
+    th.innerHTML = `${col.label} <span class="sort-icon">${_sort.col === col.key ? (_sort.dir === 'asc' ? '▲' : '▼') : '⇅'}</span>`;
+    th.addEventListener('click', () => {
+      _sort = { col: col.key, dir: _sort.col === col.key && _sort.dir === 'asc' ? 'desc' : 'asc' };
+      renderList(table);
+    });
+    htr.appendChild(th);
+  });
+  htr.appendChild(document.createElement('th'));
+  thead.appendChild(htr);
+  table.appendChild(thead);
+
+  const mul = _sort.dir === 'asc' ? 1 : -1;
+  const sorted = [..._sessions].sort((a, b) => {
+    if (_sort.col === 'date')     return mul * ((a.date ?? Infinity) - (b.date ?? Infinity));
+    if (_sort.col === 'speakers') return mul * (Object.keys(a.speakers || {}).length - Object.keys(b.speakers || {}).length);
+    if (_sort.col === 'papers')   return mul * (Object.keys(a.papers   || {}).length - Object.keys(b.papers   || {}).length);
+    if (_sort.col === 'type') {
+      const al = SESSION_TYPES.find(t => t.value === a.type)?.label ?? '';
+      const bl = SESSION_TYPES.find(t => t.value === b.type)?.label ?? '';
+      return mul * al.localeCompare(bl);
+    }
+    return mul * (a[_sort.col] || '').localeCompare(b[_sort.col] || '');
+  });
 
   const tbody = document.createElement('tbody');
-  sessions.forEach(session => {
+  sorted.forEach(session => {
     const speakerCount = Object.keys(session.speakers || {}).length;
     const paperCount   = Object.keys(session.papers   || {}).length;
     const dateStr      = session.date
       ? new Date(session.date * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
       : '—';
-
     const typeLabel = SESSION_TYPES.find(t => t.value === session.type)?.label ?? '—';
 
     const tr = document.createElement('tr');
@@ -81,12 +124,10 @@ export async function render() {
     `;
     tr.querySelector('.do-edit').addEventListener('click', (e) => { e.stopPropagation(); renderForm(session.id); });
     tr.querySelector('.do-del').addEventListener('click',  (e) => { e.stopPropagation(); doDelete(session); });
-    tr.addEventListener('click', () => showDetail(session.title, buildDetail(session, authorsData, papersData)));
+    tr.addEventListener('click', () => showDetail(session.title, buildDetail(session, _authorsData, _papersData)));
     tbody.appendChild(tr);
   });
-
   table.appendChild(tbody);
-  v.appendChild(table);
 }
 
 // ── Form ──────────────────────────────────────────────────────
@@ -118,8 +159,15 @@ async function renderForm(id = null) {
   const v = view();
   v.innerHTML = '';
 
-  v.appendChild(backBtn('Sessions', render));
-  v.appendChild(el('h1', 'form-title', id ? `Edit: ${session?.title ?? ''}` : 'New Session'));
+  const saveBtn = btn('Save Session', 'btn-primary', () => save());
+
+  const header = el('div', 'view-header');
+  const left   = el('div', 'form-nav');
+  left.appendChild(backBtn('Sessions', render));
+  left.appendChild(el('h1', 'form-title', id ? `Edit: ${session?.title ?? ''}` : 'New Session'));
+  header.appendChild(left);
+  header.appendChild(saveBtn);
+  v.appendChild(header);
 
   const form = el('div', 'form-body');
 
@@ -209,12 +257,6 @@ async function renderForm(id = null) {
   });
 
   rebuildSpeakers();
-
-  const actions = el('div', 'form-actions');
-  const saveBtn = btn('Save Session', 'btn-primary', () => save());
-  actions.appendChild(saveBtn);
-  actions.appendChild(btn('Cancel', 'btn-sm', render));
-  form.appendChild(actions);
   v.appendChild(form);
 
   async function save() {

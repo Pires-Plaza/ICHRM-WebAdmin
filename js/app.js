@@ -1,6 +1,7 @@
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase-config.js';
 import { signIn, signOutUser, friendlyError } from './auth.js';
+import { render as renderHomepage } from './homepage.js';
 import { render as renderAuthors }  from './authors.js';
 import { render as renderPapers }   from './papers.js';
 import { render as renderSessions } from './sessions.js';
@@ -13,6 +14,7 @@ initDetail();
 const $ = id => document.getElementById(id);
 
 const sections = {
+  homepage: renderHomepage,
   authors:  renderAuthors,
   papers:   renderPapers,
   sessions: renderSessions,
