@@ -8,6 +8,7 @@ const TABS = [
   { key: 'registration', label: 'Registration' },
   { key: 'callForPapers', label: 'Call for Papers' },
   { key: 'submissions',  label: 'Submissions' },
+  { key: 'gettingThere', label: 'Getting There' },
 ];
 
 // ── Render ────────────────────────────────────────────────────
@@ -39,6 +40,9 @@ export async function render(tab = 'committee') {
       break;
     case 'submissions':
       v.appendChild(buildTextCard('submissions', 'Submissions', info.submissions || ''));
+      break;
+    case 'gettingThere':
+      v.appendChild(buildGettingThereCard(info.gettingThere || {}));
       break;
   }
 }
@@ -251,6 +255,82 @@ function buildTextCard(key, title, content) {
       <textarea id="f-${key}" style="min-height:260px">${esc(content)}</textarea>
     </div>
   `;
+  card.appendChild(form);
+  return card;
+}
+
+// ── Getting There card ────────────────────────────────────────
+
+function buildGettingThereCard(data) {
+  const saveBtn = btn('Save', 'btn-primary', async () => {
+    const g = id => document.getElementById(id).value.trim();
+    const gtData = {
+      text:   document.getElementById('f-gt-text').value,
+      image1: g('f-gt-image1'),
+      image2: g('f-gt-image2'),
+      image3: g('f-gt-image3'),
+      image4: g('f-gt-image4'),
+      image5: g('f-gt-image5'),
+    };
+    saveBtn.disabled    = true;
+    saveBtn.textContent = 'Saving…';
+    try {
+      await saveDoc('info/gettingThere', gtData);
+      saveBtn.textContent = 'Saved!';
+      setTimeout(() => { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }, 2000);
+    } catch (err) {
+      alert(`Save failed: ${err.message}`);
+      saveBtn.disabled    = false;
+      saveBtn.textContent = 'Save';
+    }
+  });
+
+  const card = el('div', 'settings-card');
+
+  const cardHeader = el('div', 'settings-card-header');
+  cardHeader.appendChild(el('h2', 'settings-card-title', 'Getting There'));
+  cardHeader.appendChild(saveBtn);
+  card.appendChild(cardHeader);
+
+  const form = el('div', 'form-body');
+
+  const textField = el('div', 'field');
+  textField.innerHTML = `
+    <label>Description <span class="hint">(Markdown — clients handle rendering)</span></label>
+    <textarea id="f-gt-text" style="min-height:180px">${esc(data.text || '')}</textarea>
+  `;
+  form.appendChild(textField);
+
+  [1, 2, 3, 4, 5].forEach(i => {
+    const url   = data[`image${i}`] || '';
+    const field = el('div', 'field');
+
+    const lbl = document.createElement('label');
+    lbl.textContent = `Image ${i}`;
+    field.appendChild(lbl);
+
+    const input = document.createElement('input');
+    input.type  = 'url';
+    input.id    = `f-gt-image${i}`;
+    input.value = url;
+    field.appendChild(input);
+
+    const img = document.createElement('img');
+    img.className    = 'gt-image-preview';
+    img.alt          = '';
+    img.style.display = url ? '' : 'none';
+    if (url) img.src = url;
+    field.appendChild(img);
+
+    input.addEventListener('input', () => {
+      const v = input.value.trim();
+      img.style.display = v ? '' : 'none';
+      img.src = v || '';
+    });
+
+    form.appendChild(field);
+  });
+
   card.appendChild(form);
   return card;
 }

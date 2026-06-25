@@ -398,6 +398,15 @@ button {
 }
 .hp-text.none { color: var(--muted); font-style: italic; }
 
+.gt-image-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  margin-top: 6px;
+}
+
 /* ── Info tabs ─────────────────────────────────────────────── */
 .info-tabs {
   display: flex;
