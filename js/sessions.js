@@ -3,6 +3,17 @@ import { showDetail } from './detail.js';
 
 const view = () => document.getElementById('view');
 
+const SESSION_DURATIONS = [
+  { value: 15,  label: '15 min' },
+  { value: 30,  label: '30 min' },
+  { value: 45,  label: '45 min' },
+  { value: 60,  label: '1 h' },
+  { value: 90,  label: '1 h 30 min' },
+  { value: 120, label: '2 h' },
+  { value: 150, label: '2 h 30 min' },
+  { value: 180, label: '3 h' },
+];
+
 const SESSION_TYPES = [
   { value: 'keynote',      label: 'Keynote' },
   { value: 'presentation', label: 'Presentation' },
@@ -116,6 +127,10 @@ async function renderForm(id = null) {
     `<option value="${t.value}" ${session?.type === t.value ? 'selected' : ''}>${t.label}</option>`
   ).join('');
 
+  const durationOptions = SESSION_DURATIONS.map(d =>
+    `<option value="${d.value}" ${session?.duration === d.value ? 'selected' : ''}>${d.label}</option>`
+  ).join('');
+
   form.innerHTML = `
     <div class="field"><label>Title *</label>
       <input type="text" id="f-title" value="${esc(session?.title || '')}" /></div>
@@ -123,6 +138,11 @@ async function renderForm(id = null) {
       <select id="f-type">
         <option value="">— No type —</option>
         ${typeOptions}
+      </select></div>
+    <div class="field"><label>Duration</label>
+      <select id="f-duration">
+        <option value="">— No duration —</option>
+        ${durationOptions}
       </select></div>
     <div class="field"><label>Date &amp; Time</label>
       <input type="datetime-local" id="f-date" value="${dateValue}" /></div>
@@ -210,14 +230,16 @@ async function renderForm(id = null) {
     const newSpeakersObj = idsToObj(newSpeakerIds);
     const newChairsObj   = idsToObj(newChairIds);
 
-    const typeVal = document.getElementById('f-type').value;
+    const typeVal     = document.getElementById('f-type').value;
+    const durationVal = parseInt(document.getElementById('f-duration').value) || null;
 
     const sessionData = {
       id:       entityId,
       title,
       location:    document.getElementById('f-location').value.trim(),
       description: document.getElementById('f-description').value.trim(),
-      ...(typeVal && { type: typeVal }),
+      ...(typeVal     && { type:     typeVal }),
+      ...(durationVal && { duration: durationVal }),
       ...(dateInput                            && { date: Math.floor(new Date(dateInput).getTime() / 1000) }),
       ...(Object.keys(newPapersObj).length     && { papers:    newPapersObj }),
       ...(Object.keys(newSpeakersObj).length   && { speakers:  newSpeakersObj }),
@@ -251,7 +273,8 @@ function buildDetail(session, authorsData, papersData) {
   const dateStr = session.date
     ? new Date(session.date * 1000).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })
     : null;
-  const typeLabel = SESSION_TYPES.find(t => t.value === session.type)?.label ?? null;
+  const typeLabel     = SESSION_TYPES.find(t => t.value === session.type)?.label ?? null;
+  const durationLabel = SESSION_DURATIONS.find(d => d.value === session.duration)?.label ?? null;
   const chairs   = Object.keys(session.chairs   || {}).map(aid => authorsData[aid]?.name).filter(Boolean).sort();
   const speakers = Object.keys(session.speakers || {}).map(aid => authorsData[aid]?.name).filter(Boolean).sort();
   const papers   = Object.keys(session.papers   || {}).map(pid => papersData[pid]?.title).filter(Boolean).sort();
@@ -260,6 +283,10 @@ function buildDetail(session, authorsData, papersData) {
     ${typeLabel ? `<div class="detail-row">
       <span class="detail-label">Type</span>
       <span class="detail-value">${typeLabel}</span>
+    </div>` : ''}
+    ${durationLabel ? `<div class="detail-row">
+      <span class="detail-label">Duration</span>
+      <span class="detail-value">${durationLabel}</span>
     </div>` : ''}
     <div class="detail-row">
       <span class="detail-label">Date &amp; Time</span>
