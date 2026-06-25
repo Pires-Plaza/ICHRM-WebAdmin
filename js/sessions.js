@@ -196,7 +196,7 @@ async function renderForm(id = null) {
       <input type="datetime-local" id="f-date" value="${dateValue}" /></div>
     <div class="field"><label>Location</label>
       <input type="text" id="f-location" value="${esc(session?.location || '')}" /></div>
-    <div class="field"><label>Description <span class="hint">(Markdown — clients handle rendering)</span></label>
+    <div class="field"><label>Description</label>
       <textarea id="f-description">${esc(session?.description || '')}</textarea></div>
   `;
 

@@ -251,7 +251,7 @@ function buildTextCard(key, title, content) {
   const form = el('div', 'form-body');
   form.innerHTML = `
     <div class="field">
-      <label>Content <span class="hint">(Markdown — clients handle rendering)</span></label>
+      <label>Content</label>
       <textarea id="f-${key}" style="min-height:260px">${esc(content)}</textarea>
     </div>
   `;
