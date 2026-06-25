@@ -25,28 +25,56 @@ function buildReadCard(home) {
     ? new Date(ts * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
     : null;
 
-  const rows = [
-    { label: 'Title',       value: home.title },
-    { label: 'Subtitle',    value: home.subtitle },
-    { label: 'Description', value: home.description },
-    { label: 'Start Date',  value: fmt(home.dateStart) },
-    { label: 'End Date',    value: fmt(home.dateEnd) },
-    { label: 'Venue',       value: home.venue },
-    { label: 'Address',     value: home.address },
-    { label: 'Banner URL',  value: home.bannerURL },
-    { label: 'Topics',      value: home.topics },
-    { label: 'Format',      value: home.format },
-  ];
+  const card = el('div', 'settings-card hp-view');
 
-  const card = el('div', 'settings-card');
-  rows.forEach(({ label, value }) => {
-    const row = el('div', 'detail-row');
-    row.innerHTML = `
+  // Hero: title + subtitle
+  const hero = el('div', 'hp-hero');
+  hero.innerHTML = `
+    <h2 class="hp-title">${esc(home.title || 'Untitled Conference')}</h2>
+    ${home.subtitle ? `<p class="hp-subtitle">${esc(home.subtitle)}</p>` : ''}
+  `;
+  card.appendChild(hero);
+
+  // Banner image
+  if (home.bannerURL) {
+    const img = document.createElement('img');
+    img.className = 'hp-banner';
+    img.src = home.bannerURL;
+    img.alt = '';
+    card.appendChild(img);
+  }
+
+  // Metadata grid: dates + venue + address
+  const meta = el('div', 'hp-meta');
+  [
+    { label: 'Start Date', value: fmt(home.dateStart) },
+    { label: 'End Date',   value: fmt(home.dateEnd) },
+    { label: 'Venue',      value: home.venue },
+    { label: 'Address',    value: home.address },
+  ].forEach(({ label, value }) => {
+    const f = el('div', 'hp-field');
+    f.innerHTML = `
       <span class="detail-label">${label}</span>
       <span class="detail-value${value ? '' : ' none'}">${esc(value || 'Not set')}</span>
     `;
-    card.appendChild(row);
+    meta.appendChild(f);
   });
+  card.appendChild(meta);
+
+  // Long text sections
+  [
+    { label: 'Description', value: home.description },
+    { label: 'Topics',      value: home.topics },
+    { label: 'Format',      value: home.format },
+  ].forEach(({ label, value }) => {
+    const section = el('div', 'hp-section');
+    section.innerHTML = `
+      <span class="detail-label">${label}</span>
+      <p class="hp-text${value ? '' : ' none'}">${esc(value || 'Not set')}</p>
+    `;
+    card.appendChild(section);
+  });
+
   return card;
 }
 

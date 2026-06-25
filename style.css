@@ -359,6 +359,45 @@ button {
   font-style: italic;
 }
 
+/* ── Homepage read view ────────────────────────────────────── */
+.hp-view { display: flex; flex-direction: column; gap: 24px; }
+
+.hp-hero { padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.hp-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+.hp-subtitle { font-size: 15px; color: var(--muted); }
+
+.hp-banner {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+}
+
+.hp-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 32px;
+}
+
+.hp-field { display: flex; flex-direction: column; gap: 4px; }
+
+.hp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.hp-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.hp-text.none { color: var(--muted); font-style: italic; }
+
 /* ── Info tabs ─────────────────────────────────────────────── */
 .info-tabs {
   display: flex;
