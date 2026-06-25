@@ -128,7 +128,9 @@ async function renderForm(id = null) {
   `;
 
   form.appendChild(multiSelect('Papers', papers, 'papers', p => p.id, p => p.title, checkedPapers));
-  v.appendChild(form);
+  const card = el('div', 'settings-card');
+  card.appendChild(form);
+  v.appendChild(card);
 
   async function save() {
     const name = document.getElementById('f-name').value.trim();

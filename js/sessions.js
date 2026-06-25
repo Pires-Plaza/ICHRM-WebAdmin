@@ -257,7 +257,9 @@ async function renderForm(id = null) {
   });
 
   rebuildSpeakers();
-  v.appendChild(form);
+  const card = el('div', 'settings-card');
+  card.appendChild(form);
+  v.appendChild(card);
 
   async function save() {
     const title = document.getElementById('f-title').value.trim();

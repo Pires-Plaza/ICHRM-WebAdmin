@@ -206,7 +206,9 @@ async function renderCommitteeForm(id = null) {
       <input type="email" id="f-email" value="${esc(member?.email || '')}" /></div>
   `;
 
-  v.appendChild(form);
+  const card = el('div', 'settings-card');
+  card.appendChild(form);
+  v.appendChild(card);
 }
 
 // ── Committee delete ──────────────────────────────────────────
