@@ -18,13 +18,14 @@ export async function render() {
 }
 
 function buildConferenceCard(conf) {
-  const ongoing = conf.ongoing === true;
+  const ongoing              = conf.ongoing === true;
+  const isAcceptingReg       = conf.isAcceptingRegistration === true;
 
   const saveBtn = btn('Save', 'btn-primary', async () => {
     saveBtn.disabled    = true;
     saveBtn.textContent = 'Saving…';
     try {
-      await saveDoc('conference', { ongoing: cb.checked });
+      await saveDoc('conference', { ongoing: cb.checked, isAcceptingRegistration: cbReg.checked });
       saveBtn.textContent = 'Saved!';
       setTimeout(() => { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }, 2000);
     } catch (err) {
@@ -62,6 +63,28 @@ function buildConferenceCard(conf) {
   cb.addEventListener('change', updateLabel);
   updateLabel();
   card.appendChild(wrap);
+
+  const wrapReg = el('div', 'toggle-wrap');
+  wrapReg.innerHTML = `
+    <label class="toggle">
+      <input type="checkbox" id="f-accepting-reg" ${isAcceptingReg ? 'checked' : ''}>
+      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+    </label>
+    <span id="f-accepting-reg-label" class="toggle-label"></span>
+  `;
+
+  const cbReg    = wrapReg.querySelector('#f-accepting-reg');
+  const labelReg = wrapReg.querySelector('#f-accepting-reg-label');
+
+  const updateLabelReg = () => {
+    labelReg.innerHTML = cbReg.checked
+      ? 'Registration is <strong>open</strong>'
+      : 'Registration is <strong>closed</strong>';
+  };
+
+  cbReg.addEventListener('change', updateLabelReg);
+  updateLabelReg();
+  card.appendChild(wrapReg);
 
   return card;
 }
